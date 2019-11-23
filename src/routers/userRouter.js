@@ -157,4 +157,68 @@ router.get('/cart/getGrandTotal', (req, res)=>{
     })
 })
 
+// DELETE CART 
+router.delete(`/delete/cart/:id_cart`, (req, res)=>{
+    let sql = `DELETE from keranjang WHERE id = '${req.params.id_cart}'`
+
+    conn.query(sql, (err, result)=>{
+        if(err) return res.send(err)
+        res.send(result)
+    })
+})
+
+router.post('/bayar', (req, res)=>{
+    
+    let sql4 = `INSERT INTO transaksi SET ?`
+    let data = req.body
+
+    // BEGIN TRANSACTION
+    conn.beginTransaction((err)=>{
+        if(err){ throw err}
+        conn.query(sql4, data, (err, result)=>{
+            if(err){
+                conn.rollback(()=>{throw err})
+            }
+
+            let sql = `SELECT user_id, product_id, qty, total FROM keranjang WHERE user_id = ${req.body.user_id}`
+            conn.query(sql, (err, result)=>{
+                if(err){
+                    conn.rollback(()=>{throw err})
+                }
+
+                let data_keranjang = result
+                data_keranjang.map(data=>{
+                    data.transaksi_id = req.body.transaksi_id
+                })
+                // console.log(data_keranjang)
+                let sql2 = `INSERT INTO detail_transaksi (user_id, product_id, qty, total, transaksi_id) VALUES ?`
+                let data2 = data_keranjang.map(data=>{
+                    return ([data.user_id, data.product_id, data.qty, data.total, `${data.transaksi_id}`])
+                })
+                // console.log(data2)
+                conn.query(sql2, [data2], (err, result)=>{
+                    if(err){
+                        conn.rollback(()=>{throw err})
+                    }
+                    console.log(result)
+                    let sql3 = `DELETE FROM keranjang where user_id = ${req.body.user_id}`
+                    conn.query(sql3, (err, result)=>{
+                        if(err){
+                            conn.rollback(()=>{throw err})
+                        }
+
+                        conn.commit((err)=>{
+                            if(err){conn.rollback((err)=>{throw err})}
+                        })
+                        res.send(result)
+                        // conn.end()
+    
+                    })
+                })
+            })
+        })
+    })
+    
+})
+
 module.exports = router
