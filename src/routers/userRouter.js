@@ -100,7 +100,7 @@ router.get(`/product/hargaService/:id`, (req, res)=>{
 router.post('/product/cart/:product_id', (req, res)=>{
     
     let sql2 = `SELECT * FROM keranjang WHERE product_id = ${req.params.product_id}`
-    let sql = `INSERT INTO keranjang SET ?`
+    let sql = `INSERT INTO keranjang SET ? `
     let data = req.body
     
     conn.query(sql2, data, (err, result)=>{
@@ -109,7 +109,7 @@ router.post('/product/cart/:product_id', (req, res)=>{
             let total_qty = parseInt(hasil.qty) + req.body.qty
             let total_harga = parseInt(hasil.total) + req.body.total
             
-            let sql3 = `UPDATE keranjang SET qty = '${total_qty}', total = '${total_harga}' WHERE product_id = '${req.params.product_id}'`
+            let sql3 = `UPDATE keranjang SET qty = '${total_qty}', total = '${total_harga}' WHERE user_id = ${req.body.user_id} product_id = '${req.params.product_id}'`
             conn.query(sql3, (err, result)=>{
                 if(err) return res.send(err)
                 res.send(result)
@@ -124,7 +124,7 @@ router.post('/product/cart/:product_id', (req, res)=>{
 })
 
 // GET KERANJANG
-router.get('/getCart', (req, res)=>{
+router.get('/getCart/:user_id', (req, res)=>{
     let sql = 
     `select 
         keranjang.id,
@@ -134,7 +134,8 @@ router.get('/getCart', (req, res)=>{
         
     from keranjang
     join products
-    on products.id = keranjang.product_id`
+    on products.id = keranjang.product_id
+    where user_id = ${req.params.user_id}`
 
     conn.query(sql, (err, result)=>{
         if(err) return res.send(err)
@@ -143,13 +144,14 @@ router.get('/getCart', (req, res)=>{
 })
 
 // GET GRAND TOTAL 
-router.get('/cart/getGrandTotal', (req, res)=>{
+router.get('/cart/getGrandTotal/:user_id', (req, res)=>{
     let sql = 
     `select 
         sum(total) as grand_total
     from keranjang
     join products
-    on products.id = keranjang.product_id`
+    on products.id = keranjang.product_id
+    where user_id = ${req.params.user_id}`
 
     conn.query(sql, (err, result)=>{
         if(err) return res.send(err)
