@@ -58,7 +58,98 @@ router.patch('/user/update/:id', (req, res)=>{
 
 // GET ALL SPAREPART
 router.get('/sparepart', (req, res)=>{
-    let sql = `SELECT * FROM sparepart WHERE jenis = 'sparepart'`
+    let sql = `SELECT * FROM products WHERE jenis = 'sparepart'`
+
+    conn.query(sql, (err, result)=>{
+        if(err) return res.send(err)
+        res.send(result)
+    })
+})
+
+// GET SPAREPART HARGA
+router.get('/product/hargaSparepart/:id', (req, res)=>{
+    let sql = `SELECT harga FROM products WHERE id = ${req.params.id}`
+
+    conn.query(sql, (err, result)=>{
+        if(err) return res.send(err)
+        res.send(result)
+    })
+})
+
+// GET ALL SERVICE
+router.get('/service', (req, res)=>{
+    let sql = `SELECT * FROM products WHERE jenis = 'service'`
+
+    conn.query(sql, (err, result)=>{
+        if(err) return res.send(err)
+        res.send(result)
+    })
+})
+
+// GET HARGA SERVICE
+router.get(`/product/hargaService/:id`, (req, res)=>{
+    let sql = `SELECT harga FROM products WHERE id = ${req.params.id}`
+
+    conn.query(sql, (err, result)=>{
+        if(err) return res.send(err)
+        res.send(result)
+    })
+})
+
+// ADD TO KERANJANG
+router.post('/product/cart/:product_id', (req, res)=>{
+    
+    let sql2 = `SELECT * FROM keranjang WHERE product_id = ${req.params.product_id}`
+    let sql = `INSERT INTO keranjang SET ?`
+    let data = req.body
+    
+    conn.query(sql2, data, (err, result)=>{
+        let hasil = result[0]
+        if(hasil){
+            let total_qty = parseInt(hasil.qty) + req.body.qty
+            let total_harga = parseInt(hasil.total) + req.body.total
+            
+            let sql3 = `UPDATE keranjang SET qty = '${total_qty}', total = '${total_harga}' WHERE product_id = '${req.params.product_id}'`
+            conn.query(sql3, (err, result)=>{
+                if(err) return res.send(err)
+                res.send(result)
+            })
+        }else{
+            conn.query(sql, data, ()=>{
+                if(err) return res.send(err)
+                res.send(result)
+            })
+        }
+    })
+})
+
+// GET KERANJANG
+router.get('/getCart', (req, res)=>{
+    let sql = 
+    `select 
+        keranjang.id,
+        product,
+        qty,
+        total
+        
+    from keranjang
+    join products
+    on products.id = keranjang.product_id`
+
+    conn.query(sql, (err, result)=>{
+        if(err) return res.send(err)
+        res.send(result)
+    })
+})
+
+// GET GRAND TOTAL 
+router.get('/cart/getGrandTotal', (req, res)=>{
+    let sql = 
+    `select 
+        sum(total) as grand_total
+    from keranjang
+    join products
+    on products.id = keranjang.product_id`
 
     conn.query(sql, (err, result)=>{
         if(err) return res.send(err)
